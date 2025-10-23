@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 const vlibrasComponentCode = `// app/components/VlibrasWidget.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Script from "next/script";
 
 declare global {
@@ -22,37 +22,43 @@ declare global {
 }
 
 export default function VlibrasWidget() {
-  useEffect(() => {
-    const initVLibras = () => {
-      if (typeof window !== "undefined" && window.VLibras) {
-        new window.VLibras.Widget("https://vlibras.gov.br/app");
-      }
-    };
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const scriptLoadedRef = useRef(false);
 
-    // Tentar inicializar se o script já estiver carregado
-    if (window.VLibras) {
-      initVLibras();
+  useEffect(() => {
+    if (widgetRef.current) {
+      const mainDiv = widgetRef.current.querySelector('[data-vw]');
+      const accessButton = widgetRef.current.querySelector('[data-vw-access-button]');
+      const pluginWrapper = widgetRef.current.querySelector('[data-vw-plugin-wrapper]');
+
+      if (mainDiv) mainDiv.setAttribute('vw', '');
+      if (accessButton) accessButton.setAttribute('vw-access-button', '');
+      if (pluginWrapper) pluginWrapper.setAttribute('vw-plugin-wrapper', '');
     }
   }, []);
 
+  const initVLibras = () => {
+    if (typeof window !== "undefined" && window.VLibras && !scriptLoadedRef.current) {
+      scriptLoadedRef.current = true;
+      new window.VLibras.Widget("https://vlibras.gov.br/app");
+    }
+  };
+
   return (
     <>
-      {/* Estrutura HTML correta conforme documentação oficial */}
-      <div vw="true" className="enabled">
-        <div vw-access-button="true" className="active"></div>
-        <div vw-plugin-wrapper="true">
-          <div className="vw-plugin-top-wrapper"></div>
+      <div ref={widgetRef}>
+        <div data-vw className="enabled">
+          <div data-vw-access-button className="active"></div>
+          <div data-vw-plugin-wrapper>
+            <div className="vw-plugin-top-wrapper"></div>
+          </div>
         </div>
       </div>
 
       <Script
         src="https://vlibras.gov.br/app/vlibras-plugin.js"
         strategy="afterInteractive"
-        onLoad={() => {
-          if (typeof window !== "undefined" && window.VLibras) {
-            new window.VLibras.Widget("https://vlibras.gov.br/app");
-          }
-        }}
+        onLoad={initVLibras}
       />
     </>
   );
@@ -80,8 +86,6 @@ export default function RootLayout({
     <html lang="pt-br">
       <body className={inter.className}>
         {children}
-        
-        {/* Adicione o widget aqui, no final do <body> */}
         <VlibrasWidget />
       </body>
     </html>
@@ -90,45 +94,48 @@ export default function RootLayout({
 
 const pagesRouterCode = `// pages/_app.tsx
 import type { AppProps } from 'next/app';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Script from 'next/script';
 import '../styles/globals.css';
 
 function MyApp({ Component, pageProps }: AppProps) {
-  useEffect(() => {
-    const initVLibras = () => {
-      if (typeof (window as any).VLibras !== 'undefined') {
-        new (window as any).VLibras.Widget('https://vlibras.gov.br/app');
-      }
-    };
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const scriptLoadedRef = useRef(false);
 
-    // Tentar inicializar se o script já estiver carregado
-    if (typeof (window as any).VLibras !== 'undefined') {
-      initVLibras();
+  useEffect(() => {
+    if (widgetRef.current) {
+      const mainDiv = widgetRef.current.querySelector('[data-vw]');
+      const accessButton = widgetRef.current.querySelector('[data-vw-access-button]');
+      const pluginWrapper = widgetRef.current.querySelector('[data-vw-plugin-wrapper]');
+
+      if (mainDiv) mainDiv.setAttribute('vw', '');
+      if (accessButton) accessButton.setAttribute('vw-access-button', '');
+      if (pluginWrapper) pluginWrapper.setAttribute('vw-plugin-wrapper', '');
     }
   }, []);
+
+  const initVLibras = () => {
+    if (typeof (window as any).VLibras !== 'undefined' && !scriptLoadedRef.current) {
+      scriptLoadedRef.current = true;
+      new (window as any).VLibras.Widget('https://vlibras.gov.br/app');
+    }
+  };
 
   return (
     <>
       <Component {...pageProps} />
-
-      {/* Estrutura HTML correta do VLIBRAS */}
-      <div vw="true" className="enabled">
-        <div vw-access-button="true" className="active"></div>
-        <div vw-plugin-wrapper="true">
-          <div className="vw-plugin-top-wrapper"></div>
+      <div ref={widgetRef}>
+        <div data-vw className="enabled">
+          <div data-vw-access-button className="active"></div>
+          <div data-vw-plugin-wrapper>
+            <div className="vw-plugin-top-wrapper"></div>
+          </div>
         </div>
       </div>
-
-      {/* Script do VLIBRAS */}
       <Script
         src="https://vlibras.gov.br/app/vlibras-plugin.js"
         strategy="afterInteractive"
-        onLoad={() => {
-          if (typeof (window as any).VLibras !== 'undefined') {
-            new (window as any).VLibras.Widget('https://vlibras.gov.br/app');
-          }
-        }}
+        onLoad={initVLibras}
       />
     </>
   );
@@ -230,10 +237,9 @@ export default function VlibrasPageContent() {
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                       <p className="text-sm text-muted-foreground">
-                        A estrutura HTML usa os atributos corretos:{" "}
-                        <code className="bg-muted px-1 py-0.5 rounded">vw="true"</code>,{" "}
-                        <code className="bg-muted px-1 py-0.5 rounded">vw-access-button="true"</code>, e{" "}
-                        <code className="bg-muted px-1 py-0.5 rounded">vw-plugin-wrapper="true"</code>
+                        A estrutura HTML usa <code className="bg-muted px-1 py-0.5 rounded">data-*</code> attributes que
+                        são convertidos para os atributos personalizados corretos do VLIBRAS após a montagem do
+                        componente
                       </p>
                     </div>
                     <div className="flex items-start gap-2">
@@ -247,8 +253,10 @@ export default function VlibrasPageContent() {
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                       <p className="text-sm text-muted-foreground">
-                        O widget é inicializado automaticamente após o carregamento do script com{" "}
-                        <code className="bg-muted px-1 py-0.5 rounded">new window.VLibras.Widget()</code>
+                        Os atributos personalizados (<code className="bg-muted px-1 py-0.5 rounded">vw</code>,{" "}
+                        <code className="bg-muted px-1 py-0.5 rounded">vw-access-button</code>,{" "}
+                        <code className="bg-muted px-1 py-0.5 rounded">vw-plugin-wrapper</code>) são adicionados via
+                        useEffect para garantir compatibilidade com React
                       </p>
                     </div>
                   </div>
@@ -354,9 +362,8 @@ export default function VlibrasPageContent() {
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-blue-900 dark:text-blue-100">
-                  A estrutura HTML deve usar{" "}
-                  <code className="bg-blue-100 dark:bg-blue-900 px-1 py-0.5 rounded">vw="true"</code> como atributo, não
-                  como URL
+                  Os atributos personalizados do VLIBRAS são adicionados via manipulação direta do DOM para garantir
+                  compatibilidade com React/Next.js
                 </p>
               </div>
               <div className="flex items-start gap-2">
