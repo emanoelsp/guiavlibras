@@ -12,6 +12,7 @@ declare global {
 export default function VlibrasWidget() {
   const widgetRef = useRef<HTMLDivElement>(null)
   const scriptLoadedRef = useRef(false)
+  const widgetInitializedRef = useRef(false)
 
   useEffect(() => {
     if (widgetRef.current) {
@@ -26,9 +27,40 @@ export default function VlibrasWidget() {
   }, [])
 
   const initVLibras = () => {
-    if (typeof window !== "undefined" && window.VLibras && !scriptLoadedRef.current) {
-      scriptLoadedRef.current = true
+    if (typeof window === "undefined") return
+
+    // Wait for VLibras to be available
+    if (!window.VLibras) {
+      console.warn("VLibras not loaded yet, retrying...")
+      setTimeout(initVLibras, 100)
+      return
+    }
+
+    // Prevent multiple initializations
+    if (widgetInitializedRef.current) {
+      console.log("VLibras already initialized")
+      return
+    }
+
+    try {
+      console.log("Initializing VLibras widget...")
       new window.VLibras.Widget("https://vlibras.gov.br/app")
+      widgetInitializedRef.current = true
+      scriptLoadedRef.current = true
+      console.log("VLibras widget initialized successfully")
+    } catch (error) {
+      console.error("Error initializing VLibras widget:", error)
+      // Retry once after a delay
+      setTimeout(() => {
+        if (!widgetInitializedRef.current) {
+          try {
+            new window.VLibras.Widget("https://vlibras.gov.br/app")
+            widgetInitializedRef.current = true
+          } catch (retryError) {
+            console.error("Retry failed:", retryError)
+          }
+        }
+      }, 500)
     }
   }
 
