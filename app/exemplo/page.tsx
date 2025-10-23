@@ -1,7 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { CheckCircle2, Accessibility, Volume2, Eye, ArrowDownRight, Hand } from "lucide-react"
+import { CheckCircle2, Accessibility, Volume2, Eye, ArrowDownRight, Hand, ArrowLeft } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default function ExemploPage() {
   return (
@@ -10,6 +12,13 @@ export default function ExemploPage() {
       <section className="border-b border-border bg-gradient-to-b from-muted/50 to-background">
         <div className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-3xl">
+            <Button asChild variant="ghost" className="mb-4 -ml-2">
+              <Link href="/" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Voltar
+              </Link>
+            </Button>
+
             <Badge className="mb-4" variant="secondary">
               <Accessibility className="h-3 w-3 mr-1" />
               Demonstração

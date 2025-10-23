@@ -1,28 +1,43 @@
 "use client"
 
+import { useEffect } from "react"
 import Script from "next/script"
 
+declare global {
+  interface Window {
+    VLibras: any
+  }
+}
+
 export default function VlibrasWidget() {
+  useEffect(() => {
+    const initVLibras = () => {
+      if (typeof window !== "undefined" && window.VLibras) {
+        new window.VLibras.Widget("https://vlibras.gov.br/app")
+      }
+    }
+
+    // Tentar inicializar imediatamente se o script já estiver carregado
+    if (window.VLibras) {
+      initVLibras()
+    }
+  }, [])
+
   return (
     <>
-      {/* 1. O 'div' principal que o script do VLIBRAS usa para renderizar o widget */}
-      <div vw="https://vlibras.gov.br/app" vw-access-button vw-plugin-wrapper>
-        <div vw-plugin-top-wrapper>
-          <div vw-size-controller>
-            <div vw-size-less></div>
-            <div vw-size-more></div>
-          </div>
+      <div vw="true" className="enabled">
+        <div vw-access-button="true" className="active"></div>
+        <div vw-plugin-wrapper="true">
+          <div className="vw-plugin-top-wrapper"></div>
         </div>
       </div>
 
-      {/* 2. O script do VLIBRAS carregado via next/script */}
       <Script
         src="https://vlibras.gov.br/app/vlibras-plugin.js"
         strategy="afterInteractive"
         onLoad={() => {
-          // 3. Inicializa o widget após o script ser carregado
-          if (typeof (window as any).VLibras !== "undefined") {
-            ;new (window as any).VLibras.Widget("https://vlibras.gov.br/app")
+          if (typeof window !== "undefined" && window.VLibras) {
+            new window.VLibras.Widget("https://vlibras.gov.br/app")
           }
         }}
       />
